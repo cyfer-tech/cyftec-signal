@@ -27,10 +27,14 @@ export const effect = (fn: () => void): void => {
   subscriber = null;
 };
 
-export const derived = <T>(signalValueGetter: () => T): Signal<T> => {
-  const derivedSignal = signal<T>(null as T);
+export const derived = <T>(
+  signalValueGetter: (oldValue: T | null) => T
+): Signal<T> => {
+  let oldValue: T | null = null;
+  const derivedSignal = signal<T>(oldValue as T);
   effect(() => {
-    derivedSignal.value = signalValueGetter();
+    oldValue = signalValueGetter(oldValue);
+    derivedSignal.value = oldValue;
   });
 
   return derivedSignal;
