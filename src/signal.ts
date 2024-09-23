@@ -1,4 +1,4 @@
-import { immut, newVal } from "@cyftec/jsmut";
+import { immut, newVal } from "@cyftec/immutjs";
 import type { MaybeSignal, Signal, SignalSubscriber } from "./types";
 
 let subscriber: SignalSubscriber = null;

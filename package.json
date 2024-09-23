@@ -1,6 +1,6 @@
 {
   "name": "@cyftec/signal",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -25,7 +25,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@cyftec/jsmut": "^1.2.0"
+    "@cyftec/immutjs": "^0.1.0"
   },
   "publishConfig": {
     "access": "public"
