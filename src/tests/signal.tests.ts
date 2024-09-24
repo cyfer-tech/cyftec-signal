@@ -5,6 +5,7 @@ const strSignal: Signal<string> = signal(sigValue);
 let signalChangeCounter = 0;
 
 effect(() => {
+  // @ts-ignore
   console.log(
     `Test${++signalChangeCounter}: ${
       strSignal.value === sigValue ? "Pass" : "Failed"

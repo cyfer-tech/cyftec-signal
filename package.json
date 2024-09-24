@@ -1,12 +1,9 @@
 {
   "name": "@cyftec/signal",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.js",
+  "main": "src/index.ts",
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
     "lint": "tsc"
   },
   "repository": {
@@ -21,11 +18,10 @@
   },
   "homepage": "https://github.com/cyfer-tech/signal#readme",
   "devDependencies": {
-    "tsup": "^8.2.4",
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@cyftec/immutjs": "^0.1.0"
+    "@cyftec/immutjs": "^0.2.0"
   },
   "publishConfig": {
     "access": "public"
