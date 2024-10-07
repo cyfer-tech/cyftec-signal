@@ -40,5 +40,33 @@ export const derived = <T>(
   return derivedSignal;
 };
 
+export const dString = (
+  strings: TemplateStringsArray,
+  ...signalExpressions: ((() => string) | Signal<string>)[]
+): Signal<string> =>
+  derived(() => {
+    return strings.reduce((acc, fragment, i) => {
+      let expValue: string | null;
+      const expression = signalExpressions[i];
+
+      if (expression === undefined) {
+        expValue = "";
+      } else if (valueIsSignal(expression)) {
+        expValue = (expression as Signal<string>).value.toString();
+      } else if (typeof expression === "function") {
+        expValue = expression();
+      } else {
+        expValue = null;
+      }
+
+      if (expValue === null)
+        throw new Error(
+          "Expected a signal or a function expression which contains signal values and returns a string"
+        );
+
+      return `${acc}${fragment}${expValue}`;
+    }, "");
+  });
+
 export const valueIsSignal = (value: MaybeSignal<any>): boolean =>
   !!(value?.type === "signal");
