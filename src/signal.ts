@@ -27,6 +27,9 @@ export const effect = (fn: () => void): void => {
   subscriber = null;
 };
 
+export const wire = <T>(destination: Signal<T>, ...sources: Signal<T>[]) =>
+  sources.forEach((source) => effect(() => (destination.value = source.value)));
+
 export const derived = <T>(
   signalValueGetter: (oldValue: T | null) => T
 ): Signal<T> => {
@@ -40,9 +43,13 @@ export const derived = <T>(
   return derivedSignal;
 };
 
-export const dString = (
+export const destr = (
   strings: TemplateStringsArray,
-  ...signalExpressions: ((() => string) | Signal<string>)[]
+  ...signalExpressions: (
+    | (() => string)
+    | Signal<string | undefined>
+    | undefined
+  )[]
 ): Signal<string> =>
   derived(() => {
     return strings.reduce((acc, fragment, i) => {
@@ -51,10 +58,10 @@ export const dString = (
 
       if (expression === undefined) {
         expValue = "";
-      } else if (valueIsSignal(expression)) {
-        expValue = (expression as Signal<string>).value.toString();
       } else if (typeof expression === "function") {
         expValue = expression();
+      } else if (valueIsSignal(expression)) {
+        expValue = expression.value || "";
       } else {
         expValue = null;
       }
