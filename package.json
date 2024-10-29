@@ -1,6 +1,6 @@
 {
   "name": "@cyftec/signal",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "",
   "main": "src/index.ts",
   "scripts": {
@@ -21,7 +21,7 @@
     "typescript": "^5.6.2"
   },
   "dependencies": {
-    "@cyftec/immutjs": "^0.2.3"
+    "@cyftec/immutjs": "^0.3.0"
   },
   "publishConfig": {
     "access": "public"
