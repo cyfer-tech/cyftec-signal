@@ -1,5 +1,5 @@
 import { isPlainObject } from "@cyftec/immutjs";
-import { derived, valueIsSignal } from "../core";
+import { derived, signal, valueIsSignal } from "../core";
 import type { Signal } from "../types";
 
 export const drstr = (
@@ -47,4 +47,28 @@ export const drspread = <T extends object>(
   }, {} as { [key in keyof T]: Signal<T[key]> });
 
   return signalledEntries;
+};
+
+export const drpromstate = <T>(
+  promise: Promise<T>,
+  ultimately?: () => void
+) => {
+  const isBusy: Signal<boolean> = signal(true);
+  const result: Signal<T | undefined> = signal(undefined);
+  const error: Signal<Error | undefined> = signal(undefined);
+
+  promise
+    .then((res) => {
+      isBusy.value = false;
+      result.value = res;
+      error.value = undefined;
+    })
+    .catch((e) => {
+      isBusy.value = false;
+      result.value = undefined;
+      error.value = e;
+    })
+    .finally(ultimately);
+
+  return { isBusy, result, error };
 };
