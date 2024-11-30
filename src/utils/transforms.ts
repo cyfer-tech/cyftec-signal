@@ -10,11 +10,7 @@ import type { Signal } from "../types";
  */
 export const drstr = (
   strings: TemplateStringsArray,
-  ...signalExpressions: (
-    | (() => string)
-    | Signal<string | undefined>
-    | undefined
-  )[]
+  ...signalExpressions: ((() => any) | Signal<string | undefined> | undefined)[]
 ): Signal<string> =>
   derived(() => {
     return strings.reduce((acc, fragment, i) => {
@@ -24,9 +20,9 @@ export const drstr = (
       if (expression === undefined) {
         expValue = "";
       } else if (typeof expression === "function") {
-        expValue = expression();
+        expValue = (expression() ?? "").toString();
       } else if (valueIsSignal(expression)) {
-        expValue = expression.value || "";
+        expValue = expression.value ?? "";
       } else {
         expValue = null;
       }
