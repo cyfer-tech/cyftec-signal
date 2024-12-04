@@ -1,10 +1,18 @@
 import { effect } from "../core";
-import type { Signal } from "../types";
+import type { Signal, SourceSignal } from "../types";
 
-export const receive = <T>(destination: Signal<T>, ...sources: Signal<T>[]) =>
-  sources.forEach((source) => effect(() => (destination.value = source.value)));
+export const receive = <T>(
+  receiver: SourceSignal<T>,
+  ...transmittors: Signal<T>[]
+) =>
+  transmittors.forEach((transmittor) =>
+    effect(() => (receiver.value = transmittor.value))
+  );
 
-export const transmit = <T>(source: Signal<T>, ...destinations: Signal<T>[]) =>
+export const transmit = <T>(
+  transmittor: Signal<T>,
+  ...receivers: SourceSignal<T>[]
+) =>
   effect(() => {
-    destinations.forEach((destination) => (destination.value = source.value));
+    receivers.forEach((receiver) => (receiver.value = transmittor.value));
   });
