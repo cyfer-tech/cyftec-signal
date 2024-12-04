@@ -1,14 +1,19 @@
 import { immut, newVal } from "@cyftec/immutjs";
-import type { MaybeSignal, Signal, SignalSubscriber } from "./types";
+import type {
+  DerivedSignal,
+  MaybeSignal,
+  SignalSubscriber,
+  SourceSignal,
+} from "./types";
 
 let subscriber: SignalSubscriber = null;
 
-export const signal = <T>(value: T): Signal<T> => {
+export const source = <T>(value: T): SourceSignal<T> => {
   let _value = immut(value);
   const subscriptions = new Set<SignalSubscriber>();
 
   return {
-    type: "signal",
+    type: "source-signal",
     get value() {
       if (subscriber) subscriptions.add(subscriber);
       return newVal(_value);
@@ -28,17 +33,33 @@ export const effect = (fn: () => void): void => {
 };
 
 export const derived = <T>(
-  signalValueGetter: (oldValue: T | null) => T
-): Signal<T> => {
-  let oldValue: T | null = null;
-  const derivedSignal = signal<T>(oldValue as T);
+  signalValueGetter: (oldValue: T | undefined) => T
+): DerivedSignal<T> => {
+  let oldValue: T | undefined;
+  const derivedSource = source<T>(oldValue as T);
   effect(() => {
     oldValue = signalValueGetter(oldValue);
-    derivedSignal.value = oldValue;
+    derivedSource.value = oldValue;
   });
+
+  const derivedSignal: DerivedSignal<T> = {
+    type: "derived-signal",
+    get prevValue() {
+      return oldValue;
+    },
+    get value() {
+      return derivedSource.value;
+    },
+  };
 
   return derivedSignal;
 };
 
+export const valueIsSourceSignal = (value: MaybeSignal<any>): boolean =>
+  !!(value?.type === "source-signal");
+
+export const valueIsDerivedSignal = (value: MaybeSignal<any>): boolean =>
+  !!(value?.type === "derived-signal");
+
 export const valueIsSignal = (value: MaybeSignal<any>): boolean =>
-  !!(value?.type === "signal");
+  ["source-signal", "derived-signal"].includes(value?.type);

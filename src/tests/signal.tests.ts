@@ -1,7 +1,7 @@
-import { effect, signal, type Signal } from "../index.ts";
+import { effect, source, type SourceSignal } from "../index.ts";
 
 let sigValue = "nothing";
-const strSignal: Signal<string> = signal(sigValue);
+const strSignal: SourceSignal<string> = source(sigValue);
 let signalChangeCounter = 0;
 
 effect(() => {
