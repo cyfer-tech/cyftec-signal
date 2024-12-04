@@ -1,59 +1,69 @@
 import { isPlainObject } from "@cyftec/immutjs";
-import { derived, signal, valueIsSignal } from "../core";
-import type { Signal } from "../types";
+import { derived, source, valueIsSignal } from "../core";
+import type { DerivedSignal, Signal } from "../types";
+
+/**
+ * Tuple of truthy and falsy derived signals
+ * @param boolGetterFn
+ * @returns
+ */
+export const dbools = (
+  boolGetterFn: () => boolean
+): [DerivedSignal<boolean>, DerivedSignal<boolean>] => {
+  const truthy = derived(boolGetterFn);
+  const falsy = derived(() => !truthy.value);
+
+  return [truthy, falsy];
+};
 
 /**
  * Derived String Signal
  * @param strings
- * @param signalExpressions
+ * @param tlExpressions
  * @returns
  */
-export const drstr = (
+
+export type TemplateLiteralExpressions = ((() => any) | Signal<any> | any)[];
+
+export const dstr = (
   strings: TemplateStringsArray,
-  ...signalExpressions: ((() => any) | Signal<string | undefined> | undefined)[]
-): Signal<string> =>
+  ...tlExpressions: TemplateLiteralExpressions
+): DerivedSignal<string> =>
   derived(() => {
     return strings.reduce((acc, fragment, i) => {
-      let expValue: string | null;
-      const expression = signalExpressions[i];
+      let expValue;
+      const expression = tlExpressions[i];
 
-      if (expression === undefined) {
-        expValue = "";
-      } else if (typeof expression === "function") {
-        expValue = (expression() ?? "").toString();
+      if (typeof expression === "function") {
+        expValue = expression() ?? "";
       } else if (valueIsSignal(expression)) {
-        expValue = expression.value ?? "";
+        expValue = (expression as Signal<any>).value ?? "";
       } else {
-        expValue = null;
+        expValue = (expression as any) ?? "";
       }
 
-      if (expValue === null)
-        throw new Error(
-          "Expected a signal or a function expression which contains signal values and returns a string"
-        );
-
-      return `${acc}${fragment}${expValue}`;
+      return `${acc}${fragment}${expValue.toString()}`;
     }, "");
   });
 
 /**
- * Derived Signals of Object Spread Values
+ * Derived object with all of its properties are derived signals
  * @param objSignal
  * @returns
  */
-export const drspread = <T extends object>(
+export const dprops = <T extends object>(
   objSignal: Signal<T>
-): { [key in keyof T]: Signal<T[key]> } => {
+): { [key in keyof T]: DerivedSignal<T[key]> } => {
   if (!valueIsSignal(objSignal) || !isPlainObject(objSignal.value))
     throw new Error("Thee argument should be signal of a plain object");
 
-  const signalledEntries = Object.keys(objSignal.value).reduce((map, k) => {
+  const signalledPropsObj = Object.keys(objSignal.value).reduce((map, k) => {
     const key = k as keyof T;
     map[key] = derived(() => objSignal.value[key]);
     return map;
-  }, {} as { [key in keyof T]: Signal<T[key]> });
+  }, {} as { [key in keyof T]: DerivedSignal<T[key]> });
 
-  return signalledEntries;
+  return signalledPropsObj;
 };
 
 /**
@@ -63,26 +73,40 @@ export const drspread = <T extends object>(
  * @param ultimately
  * @returns
  */
-export const drpromstate = <T>(
+export const dpromstate = <T>(
   promiseFn: () => Promise<T>,
-  runImmediately = true,
+  runImmediately: boolean = true,
   ultimately?: () => void
 ) => {
-  const isBusy: Signal<boolean> = signal(runImmediately);
-  const result: Signal<T | undefined> = signal(undefined);
-  const error: Signal<Error | undefined> = signal(undefined);
+  type PromState = {
+    isBusy: boolean;
+    result: T | undefined;
+    error: Error | undefined;
+  };
+  const state = source<PromState>({
+    isBusy: runImmediately,
+    result: undefined,
+    error: undefined,
+  });
 
   const runPromise = () => {
-    isBusy.value = true;
+    const prevResult = state.value.result;
+    state.value = {
+      isBusy: true,
+      result: prevResult,
+      error: undefined,
+    };
 
     promiseFn()
       .then((res) => {
-        isBusy.value = false;
-        result.value = res;
-        error.value = undefined;
+        state.value = {
+          isBusy: false,
+          result: res,
+          error: undefined,
+        };
       })
       .catch((e) => {
-        isBusy.value = false;
+        const prevResult = state.value.result;
         /**
          * result.value is not set to undefined because, if the promise
          * is run multiple times, ideally last result.value should not be
@@ -98,12 +122,16 @@ export const drpromstate = <T>(
          * there is a success. There is no point of preserving the error
          * of the last run.
          */
-        error.value = e;
+        state.value = {
+          isBusy: false,
+          result: prevResult,
+          error: e,
+        };
       })
       .finally(ultimately);
   };
 
   if (runImmediately) runPromise();
 
-  return { isBusy, result, error, runPromise };
+  return { ...dprops(state), runPromise };
 };
