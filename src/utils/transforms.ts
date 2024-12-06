@@ -1,6 +1,14 @@
 import { isPlainObject } from "@cyftec/immutjs";
 import { derived, source, valueIsSignal } from "../core";
-import type { DerivedSignal, Signal } from "../types";
+import type { DerivedSignal, MaybeSignal, Signal } from "../types";
+
+/**
+ * SHorthand method to get value of a maybesignal
+ * @param value
+ * @returns
+ */
+export const val = <T>(value: MaybeSignal<T>): T =>
+  valueIsSignal(value) ? (value as Signal<T>).value : (value as T);
 
 /**
  * Tuple of truthy and falsy derived signals
