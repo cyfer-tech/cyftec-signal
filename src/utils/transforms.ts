@@ -97,14 +97,7 @@ export const dpromstate = <T>(
     error: undefined,
   });
 
-  const runPromise = () => {
-    const prevResult = state.value.result;
-    state.value = {
-      isBusy: true,
-      result: prevResult,
-      error: undefined,
-    };
-
+  const run = () =>
     promiseFn()
       .then((res) => {
         state.value = {
@@ -137,9 +130,8 @@ export const dpromstate = <T>(
         };
       })
       .finally(ultimately);
-  };
 
-  if (runImmediately) runPromise();
+  if (runImmediately) run();
 
-  return { ...dprops(state), runPromise };
+  return { ...dprops(state), run };
 };
