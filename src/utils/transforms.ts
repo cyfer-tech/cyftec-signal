@@ -1,5 +1,5 @@
 import { isPlainObject } from "@cyftec/immutjs";
-import { derived, source, valueIsSignal } from "../core";
+import { derived, effect, source, valueIsSignal } from "../core";
 import type { DerivedSignal, MaybeSignal, Signal } from "../types";
 
 /**
@@ -77,13 +77,13 @@ export const dprops = <T extends object>(
 /**
  * Derived Signals of Promise State
  * @param promiseFn
- * @param runImmediately
+ * @param runPromise
  * @param ultimately
  * @returns
  */
 export const dpromstate = <T>(
   promiseFn: () => Promise<T>,
-  runImmediately: boolean = true,
+  runPromise: MaybeSignal<boolean> = true,
   ultimately?: () => void
 ) => {
   type PromState = {
@@ -92,7 +92,7 @@ export const dpromstate = <T>(
     error: Error | undefined;
   };
   const state = source<PromState>({
-    isBusy: runImmediately,
+    isBusy: val(runPromise),
     result: undefined,
     error: undefined,
   });
@@ -131,7 +131,9 @@ export const dpromstate = <T>(
       })
       .finally(ultimately);
 
-  if (runImmediately) run();
+  effect(() => {
+    if (val(runPromise)) run();
+  });
 
-  return { ...dprops(state), run };
+  return dprops(state);
 };
