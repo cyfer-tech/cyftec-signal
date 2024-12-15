@@ -81,15 +81,25 @@ export const dprops = <T extends object>(
  * @param ultimately
  * @returns
  */
+type PromResult<T> = T | undefined;
+type PromError = Error | undefined;
+type PromRunningState = boolean;
+type RunPromFn = () => void;
+
 export const dpromstate = <T>(
   promiseFn: () => Promise<T>,
   runImmediately: boolean = true,
   ultimately?: () => void
-) => {
+): [
+  DerivedSignal<PromResult<T>>,
+  DerivedSignal<PromError>,
+  RunPromFn,
+  DerivedSignal<PromRunningState>
+] => {
   type PromState = {
-    isRunning: boolean;
-    result: T | undefined;
-    error: Error | undefined;
+    isRunning: PromRunningState;
+    result: PromResult<T>;
+    error: PromError;
   };
   const state = source<PromState>({
     isRunning: runImmediately,
@@ -97,7 +107,7 @@ export const dpromstate = <T>(
     error: undefined,
   });
 
-  const runPromise = () =>
+  const runPromise: RunPromFn = () =>
     promiseFn()
       .then((res) => {
         state.value = {
@@ -134,5 +144,5 @@ export const dpromstate = <T>(
   if (runImmediately) runPromise();
 
   const { isRunning, result, error } = dprops(state);
-  return [result, runPromise, error, isRunning];
+  return [result, error, runPromise, isRunning];
 };
