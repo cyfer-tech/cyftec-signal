@@ -81,9 +81,8 @@ export const dprops = <T extends object>(
  * @param ultimately
  * @returns
  */
-export const dpromstate = <T>(
-  promiseFn: () => Promise<T>,
-  runImmediately: boolean = true,
+export const dpromise = <T, Args extends Array<any>>(
+  promiseFn: (...args: Args) => Promise<T>,
   ultimately?: () => void
 ) => {
   type PromState = {
@@ -92,13 +91,13 @@ export const dpromstate = <T>(
     error: Error | undefined;
   };
   const state = source<PromState>({
-    isRunning: runImmediately,
+    isRunning: false,
     result: undefined,
     error: undefined,
   });
 
-  const runPromise = () =>
-    promiseFn()
+  const runPromise = (...args: Args) =>
+    promiseFn(...args)
       .then((res) => {
         state.value = {
           isRunning: false,
@@ -131,8 +130,6 @@ export const dpromstate = <T>(
       })
       .finally(ultimately);
 
-  if (runImmediately) runPromise();
-
   const { isRunning, result, error } = dprops(state);
-  return [result, error, runPromise, isRunning] as const;
+  return [runPromise, result, error, isRunning] as const;
 };
